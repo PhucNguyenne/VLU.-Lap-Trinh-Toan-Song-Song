@@ -1,0 +1,53 @@
+import random
+import time
+
+def quicksort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)
+
+def parallel_quicksort(arr, num_threads):
+    def worker(sub_arr, result, index):
+        result[index] = quicksort(sub_arr)
+    
+    chunk_size = len(arr) // num_threads
+    chunks = [arr[i * chunk_size:(i + 1) * chunk_size] for i in range(num_threads)]
+    
+    # Đảm bảo rằng phần còn lại của mảng được thêm vào chunk cuối cùng
+    if len(arr) % num_threads != 0:
+        chunks[-1].extend(arr[num_threads * chunk_size:])
+    
+    results = [None] * num_threads
+    threads = []
+    
+    for i in range(num_threads):
+        # Tạo một luồng giả lập bằng cách gọi hàm trực tiếp
+        worker(chunks[i], results, i)
+    
+    # Hợp nhất các kết quả đã sắp xếp
+    sorted_arr = []
+    for result in results:
+        sorted_arr.extend(result)
+    
+    return quicksort(sorted_arr)
+
+def generate_large_file(filename, num_lines):
+    with open(filename, 'w') as f:
+        for _ in range(num_lines):
+            f.write(f"{random.randint(1, num_lines)}\n")
+
+if __name__ == "__main__":
+    start = time.time()
+    # generate_large_file("large_file.txt", 25000000)
+    with open("test.txt", 'r') as f:
+        numbers = list(map(int, f.readlines()))
+    
+    num_threads = 4  # Số lượng luồng giả lập
+    sorted_numbers = parallel_quicksort(numbers, num_threads)
+    
+    end = time.time()
+    print(f"Time: {end - start}")
